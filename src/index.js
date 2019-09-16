@@ -28,7 +28,7 @@ class Board extends React.Component {
     )
   }
 
-  render() {
+  render() { //render 9 squares
     return (
       <div>
         <div className="board-row">
@@ -51,27 +51,28 @@ class Board extends React.Component {
   }
 }
 
-const initialState = {
+const initialState = { //the initial State for the game
     history: [{
         squares: Array(9).fill(null),
     }],
     stepNumber: 0,
     xIsNext: true,
+    players: false, //players is false if player buttons have not been clicked
 };
 
 class Game extends React.Component {
     constructor(props){
         super(props);
-        this.state = initialState;
+        this.state = initialState; //sets state of the Game parent component to initialState
     }
-    handleClick(i){
+    handleClick(i){ // handles the clicking of each square
         const history = this.state.history.slice(0, this.state.stepNumber + 1);
         const current = history[history.length - 1];
         const squares = current.squares.slice();
-        if(calculateWinner(squares) || squares[i]){
-            return;
+        if(calculateWinner(squares) || squares[i] || this.state.players == false){
+            return; //prevents squared from getting clicked after the game is over or before the game starts.
         }
-        squares[i] = this.state.xIsNext ? 'X' : 'O';
+        squares[i] = this.state.xIsNext ? 'X' : 'O'; // determines if the X player is next to go
         this.setState({
             history: history.concat([{
                 squares: squares,
@@ -79,6 +80,9 @@ class Game extends React.Component {
             stepNumber:history.length,
             xIsNext: !this.state.xIsNext,
         });
+        console.log(squares);
+        let random_array = squares[Math.floor(Math.random()*squares.length)];
+        console.log(random_array);
     }
     jumpTo(step){
         const history = this.state.history.slice(0, this.state.stepNumber + 1);
@@ -89,17 +93,38 @@ class Game extends React.Component {
             xIsNext: (step % 2) === 0,
         });
     }
-    restart(){
+    twoplayers(){
+        this.setState({
+            players: 2
+        });
+    }
+    oneplayer(){
+        this.setState({
+            players: 1
+        });
+    }
+    renderTwoPlayerButtons(i){
+        return(
+            [
+                <button className= "oneplayer" onClick={() => this.oneplayer()}>1 Player</button>,
+                <button className= "twoplayers" onClick={() => this.twoplayers()}>2 Players</button>
+            ]
+        )
+    }
+    renderRestartButton(winner, draw){
+        return(
+            <button className= { winner || draw ? "show" : "hidden"} onClick={() => this.restart()}>Restart Game</button>
+        )
+    }
+    restart(){ //reset all states to initial if the game ends and button is clicked
         this.setState(initialState);
     }
   render() {
       const history = this.state.history;
-      console.log(history);
       const current = history[this.state.stepNumber];
       const winner = calculateWinner(current.squares);
       const draw = calculateDraw(current.squares);
       const moves = history.map((step, move) => {
-          console.log('step' + JSON.stringify(step));
           if(move > 0){
               return(
                   <li key={move}>
@@ -111,22 +136,22 @@ class Game extends React.Component {
 
       let status;
       if (winner){
-          status= 'Winner: ' + winner
+          status=  'Player '+ winner + ' wins!'
       }
       else if (draw) {
           status= 'The match is a draw!'
       }
       else{
-          status= 'Next player: ' + (this.state.xIsNext ? 'X' : 'O');
+          status= 'Turn: ' + (this.state.xIsNext ? 'X' : 'O');
       }
     return (
       <div className="game">
         <h1>Tic-tac-toe</h1>
-        <div className="status">{status}</div>
-        <div className = "restart-game">
-            <button className= { winner || draw ? "show" : "hidden"} onClick={() => this.restart()}>Restart Game</button>
+        <div className={`status ${ this.state.players ? "show" : "hidden"}`}>{status}</div>
+        <div className = "middle_buttons">
+            { this.state.players ? this.renderRestartButton(winner, draw) : this.renderTwoPlayerButtons()}
         </div>
-        <div className= "game-container">
+        <div className= {`game-container ${ this.state.players ? "show" : "hidden"}`}>
             <div className="game-board">
               <Board
                 squares={current.squares}
